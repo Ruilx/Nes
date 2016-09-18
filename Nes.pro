@@ -46,3 +46,6 @@ HEADERS  += mainwindow.h \
     Nes/ApuEx/apun106.h \
     Nes/ApuEx/apufme7.h \
     Nes/apu.h
+
+DISTFILES += \
+    README.md
