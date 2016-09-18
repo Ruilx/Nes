@@ -109,6 +109,57 @@ protected:
 	quint8 znTable[256];
 
 	bool clockProcess;
+
+private:
+	inline static uint8 op6502(uint16 addr){
+		return cpuMemBank[addr >> 13][addr & 0x1FFF];
+	}
+
+	inline static uint16 op6502W(uint16 addr){
+#if 0
+		uint16 ret;
+		ret = (uint16)cpuMemBank[(addr) >> 13][(addr) & 0x1FFF];
+		ret |= (uint16)cpuMemBank[(addr +1) >> 13][(addr +1) & 0x1FFF] << 8;
+		return ret;
+#else
+		return *((uint16*) &cpuMemBank[addr >> 13][addr & 0x1FFF]);
+#endif
+	}
+
+	inline static uint8 rd6502(uint16 addr){
+		if(addr < 0x2000){
+			// RAM (Mirror $0800, $1000, $1800)
+			return ram[addr & 0x07FF];
+		}else if(addr < 0x8000){
+			// Others
+			return this->nes->read(addr);
+		}else{
+			// Dummy access
+			this->mapper->read(addr, cpuMemBank[addr >> 13][addr & 0x1FFF]);
+		}
+		// Quick bank read
+		return cpuMemBank[addr >> 13][addr & 0x1FFF];
+	}
+
+	inline static uint16 rd6502(uint16 addr){
+		if(addr < 0x2000){
+			// RAM (Mirror $0800, $1000, $1800)
+			return *((uint16*) &ram[addr & 0x07FF]);
+		}else if(addr < 0x8000){
+			// Others
+			return (uint16)this->nes->read(addr) + (uint16)this->nes->read(addr +1) * 0x100;
+		}
+		// Quick bank read
+#if 0
+		uint16 ret;
+		ret = (uint16)cpuMemBank[(addr) >> 13][(addr) & 0x1FFF];
+		ret |= (uint16)cpuMemBank[(addr +1) >> 13][(addr +1) & 0x1FFF] << 8;
+		return ret;
+#else
+		return *((uint16*) &cpuMemBank[addr >> 13][addr & 0x1FFF]);
+#endif
+	}
+
 signals:
 
 public slots:

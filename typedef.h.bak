@@ -1,0 +1,10 @@
+#ifndef TYPEDEF_H
+#define TYPEDEF_H
+
+//This file included NesEmu's typedef type
+//Qt may have these so that programming type name with Qt.
+#include <QtCore>
+
+#define Ptr //defined this parameter is an pointer, but no effect with real memory.
+
+#endif // TYPEDEF_H

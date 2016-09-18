@@ -231,5 +231,35 @@
 
 Cpu::Cpu(Nes *parent, QObject *p) : QObject(p)
 {
+	//this->nes = parent;
+	Q_UNUSED(parent);
+	this->clockProcess = false;
+}
 
+Cpu::~Cpu()
+{
+
+}
+
+void Cpu::reset()
+{
+	this->apu = this->nes->apu;
+	this->mapper = this->nes->mapper;
+
+	this->r.a = 0x00;
+	this->r.x = 0x00;
+	this->r.y = 0x00;
+	this->r.s = 0xFF;
+	this->r.p = ZFlag | RFlag;
+	this->r.pc = rd6502(ResVector);
+	this->r.intPending = 0;
+	this->totalCycles = 0;
+	this->dmaCycles = 0;
+	// Stack quick access
+	this->stack = &ram[0x0100];
+	// Zero / Negative Flag
+	this->znTable[0] = ZFlag;
+	for(int i = 1; i < 256; i++){
+		this->znTable[i] = (i & 0x80)? NFlag: 0;
+	}
 }
