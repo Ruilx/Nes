@@ -115,10 +115,30 @@ qint32 Cpu::exec(qint32 requestCycles)
 
 		this->operations[opcode];
 
+		if(nmiRequest){
+			_Nmi();
+		}else if(irqRequest){
+			_Irq();
+		}
 
+		requestCycles -= execCycles;
+		totalCycles += execCycles;
 
-
+		// Clock synchronization process
+		mapper->clock(execCycles);
+#if DpcmSyncClock
+		apu->syncDpcm(execCycles);
+#endif
+		if(clockProcess){
+			this->nes->clock(execCycles);
+		}
 	}
+ExecuteExit:
+#if !DpcmSyncClock
+	apu->syncDpcm(totalCycles - oldCycles);
+#endif
+
+	return totalCycles - oldCycles;
 }
 
 qint32 Cpu::getDmaCycles()
@@ -141,6 +161,62 @@ void Cpu::setTotalCycles(qint32 cycles)
 	this->totalCycles = cycles;
 }
 
+quint8 Cpu::op6502(quint16 addr){
+	return cpuMemBank[addr >> 13][addr & 0x1FFF];
+}
 
+quint16 Cpu::op6502W(quint16 addr){
+#if 0
+	uint16 ret;
+	ret = (uint16)cpuMemBank[(addr) >> 13][(addr) & 0x1FFF];
+	ret |= (uint16)cpuMemBank[(addr +1) >> 13][(addr +1) & 0x1FFF] << 8;
+	return ret;
+#else
+	return *((uint16*) &cpuMemBank[addr >> 13][addr & 0x1FFF]);
+#endif
+}
 
+quint8 Cpu::rd6502(quint16 addr){
+	if(addr < 0x2000){
+		// RAM (Mirror $0800, $1000, $1800)
+		return ram[addr & 0x07FF];
+	}else if(addr < 0x8000){
+		// Others
+		return this->nes->read(addr);
+	}else{
+		// Dummy access
+		this->mapper->read(addr, cpuMemBank[addr >> 13][addr & 0x1FFF]);
+	}
+	// Quick bank read
+	return cpuMemBank[addr >> 13][addr & 0x1FFF];
+}
 
+void Cpu::wr6502(quint16 addr, quint8 data)
+{
+	if(addr < 0x2000){
+		//RAM (Mirror $0x0800, $1000, $1800)
+		Ram[addr & 0x07FF] = data;
+	}else{
+		//Others
+		nes->write(addr, data);
+	}
+}
+
+quint16 Cpu::rd6502W(quint16 addr){
+	if(addr < 0x2000){
+		// RAM (Mirror $0800, $1000, $1800)
+		return *((uint16*) &ram[addr & 0x07FF]);
+	}else if(addr < 0x8000){
+		// Others
+		return (uint16)this->nes->read(addr) + (uint16)this->nes->read(addr +1) * 0x100;
+	}
+	// Quick bank read
+#if 0
+	uint16 ret;
+	ret = (uint16)cpuMemBank[(addr) >> 13][(addr) & 0x1FFF];
+	ret |= (uint16)cpuMemBank[(addr +1) >> 13][(addr +1) & 0x1FFF] << 8;
+	return ret;
+#else
+	return *((uint16*) &cpuMemBank[addr >> 13][addr & 0x1FFF]);
+#endif
+}
