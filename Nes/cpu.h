@@ -22,14 +22,14 @@ enum CpuStatusFlags{
 	VFlag = 0x40, //Overflow
 	NFlag = 0x80, //Negative
 };
-typedef CpuStatusFlags::CFlag CFlag;
-typedef CpuStatusFlags::ZFlag ZFlag;
-typedef CpuStatusFlags::IFlag IFlag;
-typedef CpuStatusFlags::DFlag DFlag;
-typedef CpuStatusFlags::BFlag BFlag;
-typedef CpuStatusFlags::RFlag RFlag;
-typedef CpuStatusFlags::VFlag VFlag;
-typedef CpuStatusFlags::NFlag NFlag;
+//typedef CpuStatusFlags::CFlag CFlag;
+//typedef CpuStatusFlags::ZFlag ZFlag;
+//typedef CpuStatusFlags::IFlag IFlag;
+//typedef CpuStatusFlags::DFlag DFlag;
+//typedef CpuStatusFlags::BFlag BFlag;
+//typedef CpuStatusFlags::RFlag RFlag;
+//typedef CpuStatusFlags::VFlag VFlag;
+//typedef CpuStatusFlags::NFlag NFlag;
 
 
 enum CpuInterrupt{
@@ -124,6 +124,10 @@ typedef struct{
 #define Push(V) { stack[(r.s--) & 0xFF] = (V); }
 // POP
 #define Pop()   stack[(++r.s) & 0xFF]
+
+// Pop & SetZnFlag
+#define PopAndSetZnFlag(a) { a = Pop(); SetZnFlag(a); }
+
 // Arithmetic operations
 // Flags(NVRBDIZC)
 // ADC  (NV----ZC)
@@ -306,7 +310,7 @@ public:
 
 	void reset();
 
-	static int nmicount = 0;
+	static int nmicount;
 	void nmi();
 	void setIrq(quint8 mask);
 	void clearIrq(quint8 mask);
@@ -406,7 +410,6 @@ private:
 	inline void ORAIMM(){ MrIm(); Ora();            AddCycle(2); } // 0x09
 	inline void ASLAAA(){         AslA();           AddCycle(2); } // 0x0A
 	inline void ANCIMM(){ MrIm(); Anc();            AddCycle(2); } // 0x0B, 0x2B
-	inline void TOPREL(){ r.pc++; r.pc++;           AddCycle(4); } // 0x0C, 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC
 	inline void ORAABS(){ MrAb(); Ora();            AddCycle(4); } // 0x0D
 	inline void ASLABS(){ MrAb(); Asl(); MwEa();    AddCycle(6); } // 0x0E
 	inline void SLOABS(){ MrAb(); Slo(); MwEa();    AddCycle(6); } // 0x0F
@@ -480,7 +483,7 @@ private:
 	inline void ADCZP_(){ MrZp(); Adc();            AddCycle(3); } // 0x65
 	inline void RORZP_(){ MrZp(); Ror(); MwZp();    AddCycle(5); } // 0x66
 	inline void RRAZP_(){ MrZp(); Rra(); MwZp();    AddCycle(5); } // 0x67
-	inline void PLAREL(){ r.a = Pop(); SetZnFlag(r.a); AddCycle(4); } // 0x68
+	inline void PLAREL(){ PopAndSetZnFlag(r.a);     AddCycle(4); } // 0x68
 	inline void ADCIMM(){ MrIm(); Adc();            AddCycle(2); } // 0x69
 	inline void RORAAA(){         RorA();           AddCycle(2); } // 0x6A
 	inline void ARRIMM(){ MrIm(); Arr();            AddCycle(2); } // 0x6B
@@ -513,29 +516,164 @@ private:
 	inline void STAABS(){ EaAb(); Sta(); MwEa();    AddCycle(4); } // 0x8D
 	inline void STXABS(){ EaAb(); Stx(); MwEa();    AddCycle(4); } // 0x8E
 	inline void SAXABS(){ MrAb(); Sax(); MwEa();    AddCycle(4); } // 0x8F
+	inline void BCCREL(){ MrIm(); Bcc();            AddCycle(2); } // 0x90
+	inline void STAIZY(){ EaIy(); Sta(); MwEa();    AddCycle(6); } // 0x91
+	inline void SHAIZY(){ MrIy(); Sha(); MwEa();    AddCycle(6); } // 0x93
+	inline void STYZPX(){ EaZx(); Sty(); MwZp();    AddCycle(4); } // 0x94
+	inline void STAZPX(){ EaZx(); Sta(); MwZp();    AddCycle(4); } // 0x95
+	inline void STXZPY(){ EaZy(); Stx(); MwZp();    AddCycle(4); } // 0x96
+	inline void SAXZPY(){ MrZy(); Sax(); MwZp();    AddCycle(4); } // 0x97
+	inline void TYAREL(){         Tya();            AddCycle(2); } // 0x98
+	inline void STAABY(){ EaAy(); Sta(); MwEa();    AddCycle(5); } // 0x99
+	inline void TXSREL(){         Txs();            AddCycle(2); } // 0x9A
+	inline void SHSABY(){ MrAy(); Shs(); MwEa();    AddCycle(5); } // 0x9B
+	inline void SHYABX(){ MrAx(); Shy(); MwEa();    AddCycle(5); } // 0x9C
+	inline void STAABX(){ EaAx(); Sta(); MwEa();    AddCycle(5); } // 0x9D
+	inline void SHXABY(){ MrAy(); Shx(); MwEa();    AddCycle(5); } // 0x9E
+	inline void SHAABY(){ MrAy(); Sha(); MwEa();    AddCycle(5); } // 0x9F
+	inline void LDYIMM(){ MrIm(); Ldy();            AddCycle(2); } // 0xA0
+	inline void LDAIZX(){ MrIx(); Lda();            AddCycle(6); } // 0xA1
+	inline void LDXIMM(){ MrIm(); Ldx();            AddCycle(2); } // 0xA2
+	inline void LAXIZX(){ MrIx(); Lax();            AddCycle(6); } // 0xA3
+	inline void LDYZP_(){ MrZp(); Ldy();            AddCycle(3); } // 0xA4
+	inline void LDAZP_(){ MrZp(); Lda();            AddCycle(3); } // 0xA5
+	inline void LDXZP_(){ MrZp(); Ldx();            AddCycle(3); } // 0xA6
+	inline void LAXZP_(){ MrZp(); Lax();            AddCycle(3); } // 0xA7
+	inline void TAYREL(){         Tay();            AddCycle(2); } // 0xA8
+	inline void LDAIMM(){ MrIm(); Lda();            AddCycle(2); } // 0xA9
+	inline void TAXREL(){         Tax();            AddCycle(2); } // 0xAA
+	inline void LXAIMM(){ MrIm(); Lxa();            AddCycle(2); } // 0xAB
+	inline void LDYABS(){ MrAb(); Ldy();            AddCycle(4); } // 0xAC
+	inline void LDAABS(){ MrAb(); Lda();            AddCycle(4); } // 0xAD
+	inline void LDXABS(){ MrAb(); Ldx();            AddCycle(4); } // 0xAE
+	inline void LAXABS(){ MrAb(); Lax();            AddCycle(4); } // 0xAF
+	inline void BCSREL(){ MrIm(); Bcs();            AddCycle(2); } // 0xB0
+	inline void LDAIZY(){ MrIy(); Lda(); CheckEa(); AddCycle(5); } // 0xB1
+	inline void LAXIZY(){ MrIy(); Lax(); CheckEa(); AddCycle(5); } // 0xB3
+	inline void LDYZPX(){ MrZx(); Ldy();            AddCycle(4); } // 0xB4
+	inline void LDAZPX(){ MrZx(); Lda();            AddCycle(4); } // 0xB5
+	inline void LDXZPY(){ MrZy(); Ldx();            AddCycle(4); } // 0xB6
+	inline void LAXZPY(){ MrZy(); Lax();            AddCycle(4); } // 0xB7
+	inline void CLVREL(){         Clv();            AddCycle(2); } // 0xB8
+	inline void LDAABY(){ MrAy(); Lda(); CheckEa(); AddCycle(4); } // 0xB9
+	inline void TSXREL(){         Tsx();            AddCycle(2); } // 0xBA
+	inline void LASABY(){ MrAy(); Las(); CheckEa(); AddCycle(4); } // 0xBB
+	inline void LDYABX(){ MrAx(); Ldy(); CheckEa(); AddCycle(4); } // 0xBC
+	inline void LDAABX(){ MrAx(); Lda(); CheckEa(); AddCycle(4); } // 0xBD
+	inline void LDXABY(){ MrAy(); Ldx(); CheckEa(); AddCycle(4); } // 0xBE
+	inline void LAXABY(){ MrAy(); Lax(); CheckEa(); AddCycle(4); } // 0xBF
+	inline void CPYIMM(){ MrIm(); Cpy();            AddCycle(2); } // 0xC0
+	inline void CMPIZX(){ MrIx(); Cmp(); CheckEa(); AddCycle(5); } // 0xC1
+	inline void DCPIZX(){ MrIx(); Dcp(); MwEa();    AddCycle(8); } // 0xC3
+	inline void CPYZP_(){ MrZp(); Cpy();            AddCycle(3); } // 0xC4
+	inline void CMPZP_(){ MrZp(); Cmp();            AddCycle(3); } // 0xC5
+	inline void DECZP_(){ MrZp(); Dec(); MwZp();    AddCycle(5); } // 0xC6
+	inline void DCPZP_(){ MrZp(); Dcp(); MwZp();    AddCycle(5); } // 0xC7
+	inline void INYREL(){         Iny();            AddCycle(2); } // 0xC8
+	inline void CMPIMM(){ MrIm(); Cmp();            AddCycle(2); } // 0xC9
+	inline void DEXREL(){         Dex();            AddCycle(2); } // 0xCA
+	inline void SBXIMM(){ MrIm(); Sbx();            AddCycle(2); } // 0xCB
+	inline void CPYABS(){ MrAb(); Cpy();            AddCycle(4); } // 0xCC
+	inline void CMPABS(){ MrAb(); Cmp();            AddCycle(4); } // 0xCD
+	inline void DECABS(){ MrAb(); Dec(); MwEa();    AddCycle(6); } // 0xCE
+	inline void DCPABS(){ MrAb(); Dcp(); MwEa();    AddCycle(6); } // 0xCF
+	inline void BNEREL(){ MrIm(); Bne();            AddCycle(2); } // 0xD0
+	inline void CMPIZY(){ MrIy(); Cmp(); CheckEa(); AddCycle(5); } // 0xD1
+	inline void DCPIZY(){ MrIy(); Dcp(); MwEa();    AddCycle(8); } // 0xD3
+	inline void CMPZPX(){ MrZx(); Cmp();            AddCycle(4); } // 0xD5
+	inline void DECZPX(){ MrZx(); Dec(); MwZp();    AddCycle(6); } // 0xD6
+	inline void DCPZPX(){ MrZx(); Dcp(); MwZp();    AddCycle(6); } // 0xD7
+	inline void CLDREL(){         Cld();            AddCycle(2); } // 0xD8
+	inline void CMPABY(){ MrAy(); Cmp(); CheckEa(); AddCycle(4); } // 0xD9
+	inline void DCPABY(){ MrAy(); Dcp(); MwEa();    AddCycle(7); } // 0xDB
+	inline void CMPABX(){ MrAx(); Cmp(); CheckEa(); AddCycle(4); } // 0xDD
+	inline void DECABX(){ MrAx(); Dec(); MwEa();    AddCycle(7); } // 0xDE
+	inline void DCPABX(){ MrAx(); Dcp(); MwEa();    AddCycle(7); } // 0xDF
+	inline void CPXIMM(){ MrIm(); Cpx();            AddCycle(2); } // 0xE0
+	inline void SBCIZX(){ MrIx(); Sbc();            AddCycle(6); } // 0xE1
+	inline void ISBIZX(){ MrIx(); Isb(); MwEa();    AddCycle(5); } // 0xE3
+	inline void CPXZP_(){ MrZp(); Cpx();            AddCycle(3); } // 0xE4
+	inline void SBCZP_(){ MrZp(); Sbc();            AddCycle(3); } // 0xE5
+	inline void INCZP_(){ MrZp(); Inc(); MwZp();    AddCycle(5); } // 0xE6
+	inline void ISBZP_(){ MrZp(); Isb(); MwZp();    AddCycle(5); } // 0xE7
+	inline void INXREL(){         Inx();            AddCycle(2); } // 0xE8
+	inline void SBCIMM(){ MrIm(); Sbc();            AddCycle(2); } // 0xE9, 0xEB
+	inline void CPXABS(){ MrAb(); Cpx();            AddCycle(4); } // 0xEC
+	inline void SBCABS(){ MrAb(); Sbc();            AddCycle(4); } // 0xED
+	inline void INCABS(){ MrAb(); Inc(); MwEa();    AddCycle(6); } // 0xEE
+	inline void ISBABS(){ MrAb(); Isb(); MwEa();    AddCycle(5); } // 0xEF
+	inline void BEQREL(){ MrIm(); Beq();            AddCycle(2); } // 0xF0
+	inline void SBCIZY(){ MrIy(); Sbc(); CheckEa(); AddCycle(5); } // 0xF1
+	inline void ISBIZY(){ MrIy(); Isb(); MwEa();    AddCycle(5); } // 0xF3
+	inline void SBCZPX(){ MrZx(); Sbc();            AddCycle(4); } // 0xF5
+	inline void INCZPX(){ MrZx(); Inc(); MwZp();    AddCycle(6); } // 0xF6
+	inline void ISBZPX(){ MrZx(); Isb(); MwZp();    AddCycle(5); } // 0xF7
+	inline void SEDREL(){         Sed();            AddCycle(2); } // 0xF8
+	inline void SBCABY(){ MrAy(); Sbc(); CheckEa(); AddCycle(4); } // 0xF9
+	inline void ISBABY(){ MrAy(); Isb(); MwEa();    AddCycle(5); } // 0xFB
+	inline void SBCABX(){ MrAx(); Sbc(); CheckEa(); AddCycle(4); } // 0xFD
+	inline void INCABX(){ MrAx(); Inc(); MwEa();    AddCycle(7); } // 0xFE
+	inline void ISBABX(){ MrAx(); Isb(); MwEa();    AddCycle(5); } // 0xFF
+	inline void NOPREL(){                           AddCycle(2); } // 0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xFA
+	inline void DOP__2(){ r.pc++;                   AddCycle(2); } // 0x80, 0x82, 0x89, 0xC2, 0xE2
+	inline void DOP__3(){ r.pc++;                   AddCycle(3); } // 0x04, 0x44, 0x64
+	inline void DOP__4(){ r.pc++;                   AddCycle(4); } // 0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4
+	inline void TOPREL(){ r.pc++; r.pc++;           AddCycle(4); } // 0x0C, 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC
+	inline void KILLED(){ this->IllegalOperationCodeAttached();  } // 0x02, 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92, 0xB2, 0xD2, 0xF2
 
-	auto operations[256] = {
+
+	typedef void(Cpu::*operationFunc)(void);
+
+	operationFunc operations[256] = {
 //      0       1       2       3       4       5       6       7       8       9       A       B       C       D       E       F
-		BRKREL, ORAIZX, KILLED, SLOIZX, DOP__3, ORAZP_, ASLZP_, SLOZP_, PHPREL, ORAIMM, ASLAAA, ANCIMM, TOPREL, ORAABS, ASLABS, SLOABS, //0+
-		BPLREL, ORAIZY, KILLED, SLOIZY, DOP__4, ORAZPX, ASLZPX, SLOZPX, CLCREL, ORAABY, NOPREL, SLOABY, TOPREL, ORAABX, ASLABX, SLOABX, //10+
-		JSRREL, ANDIZX, KILLED, RLAIZX, BITZP_, ANDZP_, ROLZP_, RLAZP_, PLPREL, ANDIMM, ROLAAA, ANCIMM, BITABS, ANDABS, ROLABS, RLAABS, //20+
-		BMIREL, ANDIZY, KILLED, RLAIZY, DOP__4, ANDZPX, ROLZPX, RLAZPX, SECREL, ANDABY, NOPREL, RLAABY, TOPREL, ANDABX, ROLABX, RLAABX, //30+
-		RTIREL, EORIZX, KILLED, SREIZX, DOP__3, EORZP_, LSRZP_, SREZP_, PHAREL, EORIMM, LSRAAA, ASRIMM, JMPABS, EORABS, LSRABS, SREABS, //40+
-		BVCREL, EORIZY, KILLED, SREIZY, DOP__4, EORZPX, LSRZPX, SREZPX, CLIREL, EORABY, NOPREL, SREABY, TOPREL, EORABX, LSRABX, SREABX, //50+
-		RTSREL, ADCIZX, KILLED, RRAIZX, DOP__3, ADCZP_, RORZP_, RRAZP_, PLAREL, ADCIMM, RORAAA, ARRIMM, JMPIZA, ADCABS, RORABS, RRAABS, //60+
-		BVSREL, ADCIZY, KILLED, RRAIZY, DOP__4, ADCZPX, RORZPX, RRAZPX, SEIREL, ADCABY, NOPREL, RRAABY, TOPREL, ADCABX, RORABX, RRAABX, //70+
-		DOP__2, STAIZX, DOP__2, SAXIZX, STYZP_, STAZP_, STXZP_, SAXZP_, DEYREL, DOP__2, TXAREL, ANEIMM, STYABS, STAABS, STXABS, SAXABS, //80+
-		BCCREL, STAIZY, KILLED, SHAIZY, STYZPX, STAZPX, STXZPY, SAXZPY, TYAREL, STAABY, TXSREL, SHSABY, SHYABX, STAABX, SHXABY, SHAABY, //90+
-		LDYIMM, LDAIZX, LDXIMM, LAXIZX, LDYZP_, LDAZP_, LDXZP_, LAXZP_, TAYREL, LDAIMM, TAXREL, LXAIMM, LDYABS, LDAABS, LDXABS, LAXABS, //A0+
-		BCSREL, LDAIZY, KILLED, LAXIZY, LDYZPX, LDAZPX, LDXZPY, LAXZPY, CLVREL, LDAABY, TSXREL, LASABY, LDYABX, LDAABX, LDXABY, LAXABY, //B0+
-		CPYIMM, CMPIZX, DOP__2, DCPIZX, CPYZP_, CMPZP_, DECZP_, DCPZP_, INYREL, CMPIMM, DEXREL, SBXIMM, CPYABS, CMPABS, DECABS, DCPABS, //C0+
-		BNEREL, CMPIZY, KILLED, DCPIZY, DOP__4, CMPZPX, DECZPX, DCPZPX, CLDREL, CMPABY, NOPREL, DCPABY, TOPREL, CMPABX, DECABX, DCPABX, //D0+
-		CPXIMM, SBCIZX, DOP__2, ISBIZX, CPXZP_, SBCZP_, INCZP_, ISBZP_, INXREL, SBCIMM, NOPREL, SBCIMM, CPXABS, SBCABS, INCABS, ISBABS, //E0+
-		BEQREL, SBCIZY, KILLED, ISBIZY, DOP__4, SBCZPX, INCZPX, ISBZPX, SEDREL, SBCABY, NOPREL, ISBABY, TOPREL, SBCABX, INCABX, ISBABX, //F0+
+/*0+ */	BRKREL, ORAIZX, KILLED, SLOIZX, DOP__3, ORAZP_, ASLZP_, SLOZP_, PHPREL, ORAIMM, ASLAAA, ANCIMM, TOPREL, ORAABS, ASLABS, SLOABS, //0+
+/*10+*/	BPLREL, ORAIZY, KILLED, SLOIZY, DOP__4, ORAZPX, ASLZPX, SLOZPX, CLCREL, ORAABY, NOPREL, SLOABY, TOPREL, ORAABX, ASLABX, SLOABX, //10+
+/*20+*/	JSRREL, ANDIZX, KILLED, RLAIZX, BITZP_, ANDZP_, ROLZP_, RLAZP_, PLPREL, ANDIMM, ROLAAA, ANCIMM, BITABS, ANDABS, ROLABS, RLAABS, //20+
+/*30+*/	BMIREL, ANDIZY, KILLED, RLAIZY, DOP__4, ANDZPX, ROLZPX, RLAZPX, SECREL, ANDABY, NOPREL, RLAABY, TOPREL, ANDABX, ROLABX, RLAABX, //30+
+/*40+*/	RTIREL, EORIZX, KILLED, SREIZX, DOP__3, EORZP_, LSRZP_, SREZP_, PHAREL, EORIMM, LSRAAA, ASRIMM, JMPABS, EORABS, LSRABS, SREABS, //40+
+/*50+*/	BVCREL, EORIZY, KILLED, SREIZY, DOP__4, EORZPX, LSRZPX, SREZPX, CLIREL, EORABY, NOPREL, SREABY, TOPREL, EORABX, LSRABX, SREABX, //50+
+/*60+*/	RTSREL, ADCIZX, KILLED, RRAIZX, DOP__3, ADCZP_, RORZP_, RRAZP_, PLAREL, ADCIMM, RORAAA, ARRIMM, JMPIZA, ADCABS, RORABS, RRAABS, //60+
+/*70+*/	BVSREL, ADCIZY, KILLED, RRAIZY, DOP__4, ADCZPX, RORZPX, RRAZPX, SEIREL, ADCABY, NOPREL, RRAABY, TOPREL, ADCABX, RORABX, RRAABX, //70+
+/*80+*/	DOP__2, STAIZX, DOP__2, SAXIZX, STYZP_, STAZP_, STXZP_, SAXZP_, DEYREL, DOP__2, TXAREL, ANEIMM, STYABS, STAABS, STXABS, SAXABS, //80+
+/*90+*/	BCCREL, STAIZY, KILLED, SHAIZY, STYZPX, STAZPX, STXZPY, SAXZPY, TYAREL, STAABY, TXSREL, SHSABY, SHYABX, STAABX, SHXABY, SHAABY, //90+
+/*A0+*/	LDYIMM, LDAIZX, LDXIMM, LAXIZX, LDYZP_, LDAZP_, LDXZP_, LAXZP_, TAYREL, LDAIMM, TAXREL, LXAIMM, LDYABS, LDAABS, LDXABS, LAXABS, //A0+
+/*B0+*/	BCSREL, LDAIZY, KILLED, LAXIZY, LDYZPX, LDAZPX, LDXZPY, LAXZPY, CLVREL, LDAABY, TSXREL, LASABY, LDYABX, LDAABX, LDXABY, LAXABY, //B0+
+/*C0+*/	CPYIMM, CMPIZX, DOP__2, DCPIZX, CPYZP_, CMPZP_, DECZP_, DCPZP_, INYREL, CMPIMM, DEXREL, SBXIMM, CPYABS, CMPABS, DECABS, DCPABS, //C0+
+/*D0+*/	BNEREL, CMPIZY, KILLED, DCPIZY, DOP__4, CMPZPX, DECZPX, DCPZPX, CLDREL, CMPABY, NOPREL, DCPABY, TOPREL, CMPABX, DECABX, DCPABX, //D0+
+/*E0+*/	CPXIMM, SBCIZX, DOP__2, ISBIZX, CPXZP_, SBCZP_, INCZP_, ISBZP_, INXREL, SBCIMM, NOPREL, SBCIMM, CPXABS, SBCABS, INCABS, ISBABS, //E0+
+/*F0+*/	BEQREL, SBCIZY, KILLED, ISBIZY, DOP__4, SBCZPX, INCZPX, ISBZPX, SEDREL, SBCABY, NOPREL, ISBABY, TOPREL, SBCABX, INCABX, ISBABX, //F0+
+
+////      0       1       2       3       4       5       6       7       8       9       A       B       C       D       E       F
+///*0+ */	&BRKREL, &ORAIZX, &KILLED, &SLOIZX, &DOP__3, &ORAZP_, &ASLZP_, &SLOZP_, &PHPREL, &ORAIMM, &ASLAAA, &ANCIMM, &TOPREL, &ORAABS, &ASLABS, &SLOABS, //0+
+///*10+*/	&BPLREL, &ORAIZY, &KILLED, &SLOIZY, &DOP__4, &ORAZPX, &ASLZPX, &SLOZPX, &CLCREL, &ORAABY, &NOPREL, &SLOABY, &TOPREL, &ORAABX, &ASLABX, &SLOABX, //10+
+///*20+*/	&JSRREL, &ANDIZX, &KILLED, &RLAIZX, &BITZP_, &ANDZP_, &ROLZP_, &RLAZP_, &PLPREL, &ANDIMM, &ROLAAA, &ANCIMM, &BITABS, &ANDABS, &ROLABS, &RLAABS, //20+
+///*30+*/	&BMIREL, &ANDIZY, &KILLED, &RLAIZY, &DOP__4, &ANDZPX, &ROLZPX, &RLAZPX, &SECREL, &ANDABY, &NOPREL, &RLAABY, &TOPREL, &ANDABX, &ROLABX, &RLAABX, //30+
+///*40+*/	&RTIREL, &EORIZX, &KILLED, &SREIZX, &DOP__3, &EORZP_, &LSRZP_, &SREZP_, &PHAREL, &EORIMM, &LSRAAA, &ASRIMM, &JMPABS, &EORABS, &LSRABS, &SREABS, //40+
+///*50+*/	&BVCREL, &EORIZY, &KILLED, &SREIZY, &DOP__4, &EORZPX, &LSRZPX, &SREZPX, &CLIREL, &EORABY, &NOPREL, &SREABY, &TOPREL, &EORABX, &LSRABX, &SREABX, //50+
+///*60+*/	&RTSREL, &ADCIZX, &KILLED, &RRAIZX, &DOP__3, &ADCZP_, &RORZP_, &RRAZP_, &PLAREL, &ADCIMM, &RORAAA, &ARRIMM, &JMPIZA, &ADCABS, &RORABS, &RRAABS, //60+
+///*70+*/	&BVSREL, &ADCIZY, &KILLED, &RRAIZY, &DOP__4, &ADCZPX, &RORZPX, &RRAZPX, &SEIREL, &ADCABY, &NOPREL, &RRAABY, &TOPREL, &ADCABX, &RORABX, &RRAABX, //70+
+///*80+*/	&DOP__2, &STAIZX, &DOP__2, &SAXIZX, &STYZP_, &STAZP_, &STXZP_, &SAXZP_, &DEYREL, &DOP__2, &TXAREL, &ANEIMM, &STYABS, &STAABS, &STXABS, &SAXABS, //80+
+///*90+*/	&BCCREL, &STAIZY, &KILLED, &SHAIZY, &STYZPX, &STAZPX, &STXZPY, &SAXZPY, &TYAREL, &STAABY, &TXSREL, &SHSABY, &SHYABX, &STAABX, &SHXABY, &SHAABY, //90+
+///*A0+*/	&LDYIMM, &LDAIZX, &LDXIMM, &LAXIZX, &LDYZP_, &LDAZP_, &LDXZP_, &LAXZP_, &TAYREL, &LDAIMM, &TAXREL, &LXAIMM, &LDYABS, &LDAABS, &LDXABS, &LAXABS, //A0+
+///*B0+*/	&BCSREL, &LDAIZY, &KILLED, &LAXIZY, &LDYZPX, &LDAZPX, &LDXZPY, &LAXZPY, &CLVREL, &LDAABY, &TSXREL, &LASABY, &LDYABX, &LDAABX, &LDXABY, &LAXABY, //B0+
+///*C0+*/	&CPYIMM, &CMPIZX, &DOP__2, &DCPIZX, &CPYZP_, &CMPZP_, &DECZP_, &DCPZP_, &INYREL, &CMPIMM, &DEXREL, &SBXIMM, &CPYABS, &CMPABS, &DECABS, &DCPABS, //C0+
+///*D0+*/	&BNEREL, &CMPIZY, &KILLED, &DCPIZY, &DOP__4, &CMPZPX, &DECZPX, &DCPZPX, &CLDREL, &CMPABY, &NOPREL, &DCPABY, &TOPREL, &CMPABX, &DECABX, &DCPABX, //D0+
+///*E0+*/	&CPXIMM, &SBCIZX, &DOP__2, &ISBIZX, &CPXZP_, &SBCZP_, &INCZP_, &ISBZP_, &INXREL, &SBCIMM, &NOPREL, &SBCIMM, &CPXABS, &SBCABS, &INCABS, &ISBABS, //E0+
+///*F0+*/	&BEQREL, &SBCIZY, &KILLED, &ISBIZY, &DOP__4, &SBCZPX, &INCZPX, &ISBZPX, &SEDREL, &SBCABY, &NOPREL, &ISBABY, &TOPREL, &SBCABX, &INCABX, &ISBABX, //F0+
 	};
+
+	void IllegalOperationCodeAttached(){
+		if(!Config.emulator.illegalOp){
+			// TODO: Throw Error String: CApp class.
+		}else{
+			r.pc--;
+			AddCycle(4);
+		}
+	}
 
 
 signals:
+	ErrorOpcodeOccurredSignal();
 
 public slots:
 };

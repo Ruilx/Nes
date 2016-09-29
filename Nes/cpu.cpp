@@ -113,9 +113,10 @@ qint32 Cpu::exec(qint32 requestCycles)
 			}
 		}
 
-		switch(opcode){
+		this->operations[opcode];
 
-		}
+
+
 
 	}
 }
