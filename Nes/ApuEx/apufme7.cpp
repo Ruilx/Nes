@@ -1,5 +1,7 @@
 #include "apufme7.h"
 
+#define ChannelVolShift 8
+
 ApuFme7::ApuFme7(QObject *parent) : QObject(parent)
 {
 	// Provisionally set

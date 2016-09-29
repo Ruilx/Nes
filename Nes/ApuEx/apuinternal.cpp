@@ -1,5 +1,10 @@
 #include "apuinternal.h"
 
+#define RectangleVolShift 8
+#define TriangleVolShift 9
+#define NoiseVolShift 8
+#define DpcmVolShift 8
+
 ApuInternal::ApuInternal(QObject *parent) : QObject(parent)
 {
 	Clear(this->ch0);

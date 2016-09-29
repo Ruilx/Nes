@@ -88,7 +88,4 @@ signals:
 public slots:
 };
 
-#define RectangleVolShift 8
-#define DaoutVolShift 6
-
 #endif // APUMMC5_H

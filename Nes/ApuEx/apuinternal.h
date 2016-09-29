@@ -291,11 +291,6 @@ signals:
 public slots:
 };
 
-#define RectangleVolShift 8
-#define TriangleVolShift 9
-#define NoiseVolShift 8
-#define DpcmVolShift 8
-
 #endif // APUINTERNAL_H
 
 

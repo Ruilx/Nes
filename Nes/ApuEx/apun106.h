@@ -48,6 +48,4 @@ signals:
 public slots:
 };
 
-#define ChannelVolShift 6
-
 #endif // APUN106_H

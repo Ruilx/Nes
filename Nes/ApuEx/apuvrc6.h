@@ -62,7 +62,5 @@ signals:
 public slots:
 };
 
-#define RectangleVolShift 8
-#define SawtoothVolShift 6
 
 #endif // APUVRC6_H

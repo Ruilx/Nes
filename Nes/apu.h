@@ -19,8 +19,8 @@
 #include "nes.h"
 #include "mmu.h"
 #include "cpu.h"
-#include "ppu.h"
-#include "rom.h"
+//#include "ppu.h"
+//#include "rom.h"
 #include "apu.h"
 
 

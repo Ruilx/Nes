@@ -1,5 +1,8 @@
 #include "apummc5.h"
 
+#define RectangleVolShift 8
+#define DaoutVolShift 6
+
 ApuMmc5::ApuMmc5(QObject *parent) : QObject(parent)
 {
 	// Provisionally set

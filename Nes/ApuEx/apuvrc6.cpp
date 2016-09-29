@@ -1,5 +1,8 @@
 #include "apuvrc6.h"
 
+#define RectangleVolShift 8
+#define SawtoothVolShift 6
+
 ApuVrc6::ApuVrc6(QObject *parent) : QObject(parent)
 {
 	// Provisionally set

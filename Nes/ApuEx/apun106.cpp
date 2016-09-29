@@ -1,5 +1,7 @@
 #include "apun106.h"
 
+#define ChannelVolShift 6
+
 ApuN106::ApuN106(QObject *parent) : QObject(parent)
 {
 	// It initializes the first only TONE
