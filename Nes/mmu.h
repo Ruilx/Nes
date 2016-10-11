@@ -49,12 +49,12 @@ public:
 	quint16 loopyX;        //Tile X offset
 
 	//ROM data pointer
-	Ptr quint8 prom;       //PROM ptr
-	Ptr quint8 vrom;       //VROM ptr
+	Ptr quint8 *prom;       //PROM ptr
+	Ptr quint8 *vrom;       //VROM ptr
 
 	#ifdef _DataTrace
 	//For dis...
-	Ptr quint8 promAccress;
+	Ptr quint8 *promAccress;
 	#endif
 
 	//ROM bank size
@@ -68,6 +68,43 @@ public:
 
 	//Function
 	explicit Mmu(QObject *parent = 0);
+	void nesSubMemoryInitial();
+	void setPromBank(uint8 page, uint8 *ptr, uint8 type);
+	void setProm8KBank(uint8 page, int bank);
+	void setProm16KBank(uint8 page, int bank);
+	void setProm32KBank(int bank);
+	void setProm32KBank(int bank0, int bank1, int bank2, int bank3);
+	void setVromBank(uint8 page, uint8 *ptr, uint8 type);
+	void setVrom1KBank(uint8 page, int bank);
+	void setVrom2KBank(uint8 page, int bank);
+	void setVrom4KBank(uint8 page, int bank);
+	void setVrom8KBank(int bank);
+	void setVrom8KBank(int bank0, int bank1, int bank2, int bank3, int bank4, int bank5, int bank6, int bank7);
+	void setCram1KBank(uint8 page, int bank);
+	void setCram2KBank(uint8 page, int bank);
+	void setCram4KBank(uint8 page, int bank);
+	void setCram8KBank(int bank);
+	void setVRam1KBank(uint8 page, int bank);
+	void setVramBank(int bank0, int bank1, int bank2, int bank3);
+	void setVramMirror(int type);
+	void setVramMirror(int bank0, int bank1, int bank2, int bank3);
+
+	// Memory Type
+	// For PROM (CPU)
+#define BankTypeRom    0x00
+#define BankTypeRam    0xFF
+#define BankTypeDram   0x01
+#define BanktypeMapper 0x80
+	// For VROM/VRAM/CRAM (PPU)
+#define BankTypeVrom   0x00
+#define BankTypeCram   0x01
+#define BankTypeVram   0x80
+	// Mirror Type
+#define VramHMirror    0x00 // Horizontal
+#define VramVMirror    0x01 // Virtical
+#define VramMirror4    0x02 // All screen
+#define VramMirror4L   0x03 // Pa10 L locked $2000-$23FF's mirror
+#define VramMirror4H   0x04 // PA10 H locked $2400-$27FF's mirror
 
 signals:
 
@@ -75,3 +112,26 @@ public slots:
 };
 
 #endif // MMU_H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

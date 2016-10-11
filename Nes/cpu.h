@@ -304,9 +304,9 @@ public:
 	explicit Cpu(Nes *parent, QObject *p = 0);
 	virtual ~Cpu();
 
-	quint8 readCpu(quint16 addr);
-	void writeCpu(quint16 addr, quint8 data);
-	quint16 readWordCpu(quint16 addr);
+	quint8 rd6502(quint16 addr);
+	void wr6502(quint16 addr, quint8 data);
+	quint16 rd6502W(quint16 addr);
 
 	void reset();
 
@@ -351,54 +351,10 @@ private:
 	uint16 wt;
 	uint8  dt;
 
-	inline static uint8 op6502(uint16 addr){
-		return cpuMemBank[addr >> 13][addr & 0x1FFF];
-	}
-
-	inline static uint16 op6502W(uint16 addr){
-#if 0
-		uint16 ret;
-		ret = (uint16)cpuMemBank[(addr) >> 13][(addr) & 0x1FFF];
-		ret |= (uint16)cpuMemBank[(addr +1) >> 13][(addr +1) & 0x1FFF] << 8;
-		return ret;
-#else
-		return *((uint16*) &cpuMemBank[addr >> 13][addr & 0x1FFF]);
-#endif
-	}
-
-	inline static uint8 rd6502(uint16 addr){
-		if(addr < 0x2000){
-			// RAM (Mirror $0800, $1000, $1800)
-			return ram[addr & 0x07FF];
-		}else if(addr < 0x8000){
-			// Others
-			return this->nes->read(addr);
-		}else{
-			// Dummy access
-			this->mapper->read(addr, cpuMemBank[addr >> 13][addr & 0x1FFF]);
-		}
-		// Quick bank read
-		return cpuMemBank[addr >> 13][addr & 0x1FFF];
-	}
-
-	inline static uint16 rd6502W(uint16 addr){
-		if(addr < 0x2000){
-			// RAM (Mirror $0800, $1000, $1800)
-			return *((uint16*) &ram[addr & 0x07FF]);
-		}else if(addr < 0x8000){
-			// Others
-			return (uint16)this->nes->read(addr) + (uint16)this->nes->read(addr +1) * 0x100;
-		}
-		// Quick bank read
-#if 0
-		uint16 ret;
-		ret = (uint16)cpuMemBank[(addr) >> 13][(addr) & 0x1FFF];
-		ret |= (uint16)cpuMemBank[(addr +1) >> 13][(addr +1) & 0x1FFF] << 8;
-		return ret;
-#else
-		return *((uint16*) &cpuMemBank[addr >> 13][addr & 0x1FFF]);
-#endif
-	}
+	inline static uint8 op6502(uint16 addr);
+	inline static uint16 op6502W(uint16 addr);
+	inline static uint8 rd6502(uint16 addr);
+	inline static uint16 rd6502W(uint16 addr);
 
 	inline void BRKREL(){         Brk();            AddCycle(7); } // 0x00
 	inline void ORAIZX(){ MrIx(); Ora();            AddCycle(6); } // 0x01

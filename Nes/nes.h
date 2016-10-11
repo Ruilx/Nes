@@ -2,6 +2,13 @@
 #define NES_H
 
 #include "../typedef.h"
+#include "cpu.h"
+#include "ppu.h"
+#include "apu.h"
+#include "rom.h"
+#include "pad.h"
+#include "mapper.h"
+
 
 #define NES_PROFILER 0
 
